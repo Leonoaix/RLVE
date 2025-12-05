@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 from time import time
 from typing import Union
+from collections import Counter
 
 import ray
 import torch
@@ -24,6 +25,8 @@ class RolloutController:
     def __init__(self, args, wandb_run_id):
         self.args = args
         init_wandb_secondary(args, wandb_run_id)
+
+        self.cumulative_env_counts = Counter()
 
         self.data_source = RolloutDataSourceWithBuffer(args)
 
@@ -74,7 +77,18 @@ class RolloutController:
                 path,
             )
         
-        log_rollout_data(rollout_id, self.args, data, time() - start_time)
+        # Extract the environment name of the current round of data
+        current_batch_envs = []
+        for s in data:
+            meta = getattr(s, "metadata", {}) or {}
+            if "environment" in meta:
+                current_batch_envs.append(str(meta["environment"]))
+
+        # Update cumulative environment counts
+        self.cumulative_env_counts.update(current_batch_envs)
+
+        # pass cumulative counts to log function
+        log_rollout_data(rollout_id, self.args, data, time() - start_time, cumulative_counts=self.cumulative_env_counts)
         data = self._convert_samples_to_train_data(data)
         return Box(ray.put(data))
 
@@ -189,7 +203,7 @@ def log_eval_data(rollout_id, args, data):
         wandb.log(log_dict)
 
 
-def log_rollout_data(rollout_id, args, samples, rollout_time):
+def log_rollout_data(rollout_id, args, samples, rollout_time, cumulative_counts=None):
     if args.load_debug_rollout_data:
         return
 
@@ -208,4 +222,10 @@ def log_rollout_data(rollout_id, args, samples, rollout_time):
             if not args.wandb_always_use_train_step
             else rollout_id * args.rollout_batch_size * args.n_samples_per_prompt // args.global_batch_size
         )
+
+        # Log cumulative environment counts if provided
+        if cumulative_counts:
+            for env_name, count in cumulative_counts.items():
+                log_dict[f"cumulative_samples/{env_name}"] = count
+
         wandb.log(log_dict)
