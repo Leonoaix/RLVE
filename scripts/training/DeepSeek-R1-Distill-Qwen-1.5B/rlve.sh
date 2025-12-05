@@ -36,10 +36,10 @@ echo "HAS_NVLINK: $HAS_NVLINK (detected $NVLINK_COUNT NVLink references)"
 source scripts/models/deepseek-r1-distill-qwen-1.5B.sh
 
 CKPT_ARGS=(
-   --hf-checkpoint ../DeepSeek-R1-Distill-Qwen-1.5B
-   --ref-load ../DeepSeek-R1-Distill-Qwen-1.5B_torch_dist
-   --load ../${RUN_NAME}/
-   --save ../${RUN_NAME}/
+   --hf-checkpoint ../models/DeepSeek-R1-Distill-Qwen-1.5B
+   --ref-load ../models/DeepSeek-R1-Distill-Qwen-1.5B_torch_dist
+   --load ../logs/${RUN_NAME}/
+   --save ../logs/${RUN_NAME}/
    --save-interval 1
 )
 
