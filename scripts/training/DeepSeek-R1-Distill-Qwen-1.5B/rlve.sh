@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# grpo version
 if [ $# -lt 3 ]; then
     echo "Usage: $0 WANDB_PROJECT RUN_NAME ENVIRONMENT_LIST"
     exit 1
@@ -60,13 +61,19 @@ ROLLOUT_ARGS=(
    --rollout-max-response-len 24576
    --rollout-temperature 1.0
 
-   --over-sampling-batch-size 384
-   --dynamic-sampling-filter-path slime.rollout.filter_hub.dynamic_sampling_filters.check_reward_nonzero_std
-   --partial-rollout
+   # since we don't use over-sampling, this should be the same as rollout-batch-size
+   --over-sampling-batch-size 128 
+   # remove the dynamic sampling to keep all samples
+   # --dynamic-sampling-filter-path slime.rollout.filter_hub.dynamic_sampling_filters.check_reward_nonzero_std
+   
+   # since we use whole data, this collector is not needed 
+   # --partial-rollout
 
    --num-steps-per-rollout 1
    --wandb-always-use-train-step
-   --balance-data
+
+   # A pure On-Policy algorithm should follow the natural distribution and avoid manual intervention in data weights.
+   # --balance-data
 )
 
 EVAL_ARGS=(
@@ -100,14 +107,21 @@ PERF_ARGS=(
 
 GRPO_ARGS=(
    --advantage-estimator grpo
-   # --use-kl-loss
-   # --kl-loss-coef 0.00
-   # --kl-loss-type low_var_kl
-   --entropy-coef 0.00
-   --eps-clip 0.2
-   --eps-clip-high 0.28
 
-   --use-tis
+   --use-kl-loss
+   --kl-loss-coef 0.01
+   --kl-loss-type low_var_kl
+
+   --kl-coef 0.00
+
+   --entropy-coef 0.00
+
+   # use symmetric clip for grpo
+   --eps-clip 0.2
+   # --eps-clip-high 0.28
+
+   # don't use TIS for grpo
+   # --use-tis
 )
 
 OPTIMIZER_ARGS=(
