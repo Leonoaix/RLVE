@@ -1,41 +1,54 @@
 #!/bin/bash
-
 set -e
 
-EVAL_SCRIPT="scripts/evaluation/DeepSeek-R1-Distill-Qwen-1.5B/eval_BENCHMARKS.sh"
-LOG_FILE="eval_time.txt"
+# ===== config =====
+ROOT_DIR="/root/RLVE"
+LOG_FILE="eval_time_all.txt"
 
-cd /root/RLVE
+EVAL_BENCH="scripts/evaluation/DeepSeek-R1-Distill-Qwen-1.5B/eval_BENCHMARKS.sh"
+EVAL_LIVE="scripts/evaluation/DeepSeek-R1-Distill-Qwen-1.5B/eval_LiveCodeBench.sh"
+EVAL_OOD="scripts/evaluation/DeepSeek-R1-Distill-Qwen-1.5B/eval_HELD-OUT_ENVIRONMENTS.sh"
+
+cd "${ROOT_DIR}"
 
 echo "Evaluation start: $(date)" >> "${LOG_FILE}"
 echo "----------------------------------------" >> "${LOG_FILE}"
 
-run_eval () {
-    model_path="$1"
+# ===== utils =====
+run_one () {
+    eval_script="$1"
+    eval_name="$2"
+    model_path="$3"
 
-    echo "Start eval: ${model_path}"
+    echo "Start ${eval_name}: ${model_path}"
     start_time=$(date +%s)
 
-    bash "${EVAL_SCRIPT}" "${model_path}"
+    bash "${eval_script}" "${model_path}"
 
     end_time=$(date +%s)
     cost=$((end_time - start_time))
 
-    echo "$(date '+%F %T') | ${model_path} | ${cost}s" >> "${LOG_FILE}"
+    echo "$(date '+%F %T') | ${eval_name} | ${model_path} | ${cost}s" >> "${LOG_FILE}"
 }
 
-run_eval "../models/Deepseek-R1-Distill-Qwen-1.5B-env-256-400-hf"
-run_eval "../models/Deepseek-R1-Distill-Qwen-1.5B-env-256-800-hf"
-run_eval "../models/Deepseek-R1-Distill-Qwen-1.5B-env-16-kl-coef0.005-400-hf/"
-run_eval "../models/Deepseek-R1-Distill-Qwen-1.5B-env-16-kl-coef0.01-400-hf/"
-run_eval "../models/Deepseek-R1-Distill-Qwen-1.5B-env-rand16_2-400-hf"
-run_eval "../models/Deepseek-R1-Distill-Qwen-1.5B-env-rand16_1-400-hf"
-run_eval "../models/Deepseek-R1-Distill-Qwen-1.5B-env-256-300-hf"
-run_eval "../models/Deepseek-R1-Distill-Qwen-1.5B-env-16-300-hf/"
-run_eval "../models/Deepseek-R1-Distill-Qwen-1.5B-env-4-300-hf/"
-run_eval "../models/Deepseek-R1-Distill-Qwen-1.5B-env-256-100-hf"
-run_eval "../models/Deepseek-R1-Distill-Qwen-1.5B-env-16-100-hf/"
-run_eval "../models/Deepseek-R1-Distill-Qwen-1.5B-env-4-100-hf/"
+run_all_for_model () {
+    model_path="$1"
+
+    run_one "${EVAL_BENCH}" "BENCHMARKS"        "${model_path}"
+    run_one "${EVAL_LIVE}"  "LiveCodeBench"     "${model_path}"
+    run_one "${EVAL_OOD}"   "HELD-OUT-ENV (OOD)" "${model_path}"
+}
+
+# ===== model list =====
+MODELS=(
+  "../models/Deepseek-R1-Distill-Qwen-1.5B-env-4-comp2-100-hf"
+  "../models/Deepseek-R1-Distill-Qwen-1.5B-env-4-comp1-100-hf"
+)
+
+# ===== run =====
+for m in "${MODELS[@]}"; do
+  run_all_for_model "${m}"
+done
 
 echo "----------------------------------------" >> "${LOG_FILE}"
 echo "Evaluation end: $(date)" >> "${LOG_FILE}"
