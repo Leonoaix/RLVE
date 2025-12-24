@@ -26,6 +26,24 @@ def log_samples_to_wandb_table(args, rollout_id, samples, max_rows=64, max_text_
 
     import wandb
 
+    import re
+
+    def _safe_name(x: str) -> str:
+        x = str(x or "unknown").strip()
+        x = re.sub(r"[^a-zA-Z0-9._-]+", "_", x)
+        return x[:80]
+
+    def _infer_env(samples) -> str:
+        envs = []
+        for s in samples:
+            md = getattr(s, "metadata", None) or {}
+            e = md.get("environment", "") or ""
+            if e:
+                envs.append(e)
+        if not envs:
+            return "unknown"
+        return envs[0] if len(set(envs)) == 1 else "mixed"
+
     columns = [
         "rollout_id",
         "index",
@@ -48,8 +66,8 @@ def log_samples_to_wandb_table(args, rollout_id, samples, max_rows=64, max_text_
     for s in samples[:max_rows]:
         # 你这个 Sample 是对象，直接取属性最稳
         idx = getattr(s, "index", None)
-        prompt = (getattr(s, "prompt", "") or "")[:max_text_len]
-        response = (getattr(s, "response", "") or "")[:max_text_len]
+        prompt = (getattr(s, "prompt", "") or "")
+        response = (getattr(s, "response", "") or "")
         resp_len = getattr(s, "response_length", None)
 
         md = getattr(s, "metadata", None) or {}
@@ -92,8 +110,30 @@ def log_samples_to_wandb_table(args, rollout_id, samples, max_rows=64, max_text_
             lp_min,
         )
 
-    # 用同一个 key，方便在 W&B 里固定找到这张表
-    wandb.log({"rollout/samples_table": table, "rollout_id": rollout_id}, commit=True)
+    env_name = _infer_env(samples[:max_rows])
+    env_key = _safe_name(env_name)
+
+    run_id = getattr(wandb.run, "id", None) or "no_run"
+
+    # 1) Artifacts/History：用“环境 + run_id”做名字，不会和别的 run 混
+    # 这里用 / 只是为了在 UI 里分组好看；summary 我们不用 /
+    batch_tag = f"batch_{rollout_id:05d}"
+    artifact_key = f"rollout_samples/{env_key}/{run_id}/{batch_tag}"
+    wandb.log(
+        {
+            f"{artifact_key}": table,
+            f"{artifact_key}/rollout_id": rollout_id,
+            f"{artifact_key}/env": env_name,
+        },
+        commit=True,
+    )
+
+    # 2) Summary：放一份“最新表”，保证你在 summary 里能直接看到
+    summary_key = f"latest_samples_{env_key}"
+    wandb.run.summary[summary_key] = table
+    wandb.run.summary[f"{summary_key}_rollout_id"] = rollout_id
+    wandb.run.summary[f"{summary_key}_env"] = env_name
+
 
 
 
@@ -138,7 +178,7 @@ class RolloutController:
             #     self._debug_once = True
             #     breakpoint()
             
-            if rollout_id % 10 == 0:
+            if rollout_id % 25 == 0:
                 log_samples_to_wandb_table(self.args, rollout_id, data, max_rows=64)
 
 
