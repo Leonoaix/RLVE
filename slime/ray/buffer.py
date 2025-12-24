@@ -16,6 +16,86 @@ from slime.utils.wandb_utils import init_wandb_secondary
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
+def log_samples_to_wandb_table(args, rollout_id, samples, max_rows=64, max_text_len=800, max_tokens_head=128):
+    """
+    Log rollout samples to W&B as a Table.
+    Each row = one Sample.
+    """
+    if not getattr(args, "use_wandb", False):
+        return
+
+    import wandb
+
+    columns = [
+        "rollout_id",
+        "index",
+        "environment",
+        "difficulty",
+        "status",
+        "reward_reward",
+        "accuracy",
+        "format_score",
+        "response_length",
+        "prompt",
+        "response",
+        "tokens_head",
+        "logprob_mean",
+        "logprob_min",
+    ]
+
+    table = wandb.Table(columns=columns)
+
+    for s in samples[:max_rows]:
+        # 你这个 Sample 是对象，直接取属性最稳
+        idx = getattr(s, "index", None)
+        prompt = (getattr(s, "prompt", "") or "")[:max_text_len]
+        response = (getattr(s, "response", "") or "")[:max_text_len]
+        resp_len = getattr(s, "response_length", None)
+
+        md = getattr(s, "metadata", None) or {}
+        env = md.get("environment", "")
+        diff = md.get("problem_difficulty", md.get("difficulty", ""))
+
+        status = str(getattr(s, "status", ""))
+
+        rew = getattr(s, "reward", None) or {}
+        # reward 是 dict，按你截图里面的 key
+        reward_reward = rew.get("reward", None)
+        accuracy = rew.get("accuracy", None)
+        format_score = rew.get("format_score", None)
+
+        toks = getattr(s, "tokens", None)
+        tokens_head = toks[:max_tokens_head] if isinstance(toks, list) else toks
+
+        lps = getattr(s, "rollout_log_probs", None)
+        if isinstance(lps, list) and len(lps) > 0:
+            lp_mean = sum(lps) / len(lps)
+            lp_min = min(lps)
+        else:
+            lp_mean = None
+            lp_min = None
+
+        table.add_data(
+            rollout_id,
+            idx,
+            env,
+            diff,
+            status,
+            reward_reward,
+            accuracy,
+            format_score,
+            resp_len,
+            prompt,
+            response,
+            tokens_head,
+            lp_mean,
+            lp_min,
+        )
+
+    # 用同一个 key，方便在 W&B 里固定找到这张表
+    wandb.log({"rollout/samples_table": table, "rollout_id": rollout_id}, commit=True)
+
+
 
 @ray.remote
 class RolloutController:
@@ -53,6 +133,14 @@ class RolloutController:
             # flatten the data if it is a list of lists
             while isinstance(data[0], list):
                 data = sum(data, [])
+
+            # if rollout_id % 10 == 0 and not hasattr(self, "_debug_once"):
+            #     self._debug_once = True
+            #     breakpoint()
+            
+            if rollout_id % 10 == 0:
+                log_samples_to_wandb_table(self.args, rollout_id, data, max_rows=64)
+
 
             if len(data) % self.args.global_batch_size != 0:
                 trim_len = (len(data) // self.args.global_batch_size) * self.args.global_batch_size
