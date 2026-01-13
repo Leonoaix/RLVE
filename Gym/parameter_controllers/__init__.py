@@ -62,6 +62,9 @@ from Gym.parameter_controllers.degree_fixed_spanning_tree import DegreeFixed_Spa
 from Gym.parameter_controllers.delta_min_popcount import DeltaMinPopcount_ParameterController
 from Gym.parameter_controllers.delta_nim_game import DeltaNimGame_ParameterController
 from Gym.parameter_controllers.derangement_extension import DerangementExtension_ParameterController
+from Gym.parameter_controllers.dcs_rewrite import DCS_Rewrite_ParameterController
+from Gym.parameter_controllers.dcs_propose import DCS_Propose_ParameterController
+from Gym.parameter_controllers.dcs_verify_repair import DCS_VerifyRepair_ParameterController
 from Gym.parameter_controllers.difference_constraint_system import DifferenceConstraintSystem_ParameterController
 from Gym.parameter_controllers.difference_constraint_system_dag import DifferenceConstraintSystemDAG_ParameterController
 from Gym.parameter_controllers.different_color_pairing import DifferentColorPairing_ParameterController
@@ -464,6 +467,9 @@ identifier2controller = {
     "DeltaMinPopcount" : DeltaMinPopcount_ParameterController,
     "DeltaNimGame" : DeltaNimGame_ParameterController,
     "DerangementExtension" : DerangementExtension_ParameterController,
+    "DCSRewrite" : DCS_Rewrite_ParameterController,
+    "DCSPropose" : DCS_Propose_ParameterController,
+    "DCSVerifyRepair" : DCS_VerifyRepair_ParameterController,
     "DifferenceConstraintSystem" : DifferenceConstraintSystem_ParameterController,
     "DifferenceConstraintSystemDAG" : DifferenceConstraintSystemDAG_ParameterController,
     "DifferentColorPairing" : DifferentColorPairing_ParameterController,

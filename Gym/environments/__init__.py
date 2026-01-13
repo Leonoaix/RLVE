@@ -62,6 +62,9 @@ from Gym.environments.degree_fixed_spanning_tree import DegreeFixed_SpanningTree
 from Gym.environments.delta_min_popcount import DeltaMinPopcount_Environment
 from Gym.environments.delta_nim_game import DeltaNimGame_Environment
 from Gym.environments.derangement_extension import DerangementExtension_Environment
+from Gym.environments.dcs_rewrite import DCS_Rewrite_Environment
+from Gym.environments.dcs_propose import DCS_Propose_Environment
+from Gym.environments.dcs_verify_repair import DCS_VerifyRepair_Environment
 from Gym.environments.difference_constraint_system import DifferenceConstraintSystem_Environment
 from Gym.environments.difference_constraint_system_dag import DifferenceConstraintSystemDAG_Environment
 from Gym.environments.different_color_pairing import DifferentColorPairing_Environment
@@ -464,6 +467,9 @@ identifier2environment = {
     "DeltaMinPopcount" : DeltaMinPopcount_Environment,
     "DeltaNimGame" : DeltaNimGame_Environment,
     "DerangementExtension" : DerangementExtension_Environment,
+    "DCSRewrite" : DCS_Rewrite_Environment,
+    "DCSPropose" : DCS_Propose_Environment,
+    "DCSVerifyRepair" : DCS_VerifyRepair_Environment,
     "DifferenceConstraintSystem" : DifferenceConstraintSystem_Environment,
     "DifferenceConstraintSystemDAG" : DifferenceConstraintSystemDAG_Environment,
     "DifferentColorPairing" : DifferentColorPairing_Environment,

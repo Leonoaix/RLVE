@@ -8,5 +8,5 @@ fi
 WANDB_PROJECT=$1
 
 bash scripts/training/DeepSeek-R1-Distill-Qwen-1.5B/rlve.sh "${WANDB_PROJECT}" \
-    "[DeepSeek-R1-Distill-Qwen-1.5B]_[num-environment=1]" \
-    "DifferenceConstraintSystem"
+    "[DeepSeek-R1-Distill-Qwen-1.5B]_DCS_sub_environments" \
+    "DCSRewrite DCSPropose DCSVerifyRepair"

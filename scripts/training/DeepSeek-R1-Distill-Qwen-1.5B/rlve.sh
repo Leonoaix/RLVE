@@ -40,7 +40,7 @@ CKPT_ARGS=(
    --ref-load ../models/DeepSeek-R1-Distill-Qwen-1.5B_torch_dist
    --load ../logs/${RUN_NAME}/
    --save ../logs/${RUN_NAME}/
-   --save-interval 1
+   --save-interval 25
 )
 
 ROLLOUT_ARGS=(
@@ -54,7 +54,7 @@ ROLLOUT_ARGS=(
    --rm-type rlve
    --reward-key reward
 
-   --num-rollout 1000000
+   --num-rollout 400
    --rollout-batch-size 128
    --n-samples-per-prompt 16
    --rollout-max-response-len 24576
@@ -117,6 +117,7 @@ OPTIMIZER_ARGS=(
    --weight-decay 0.01
    --adam-beta1 0.9
    --adam-beta2 0.98
+   --override-opt-param-scheduler
 )
 
 WANDB_ARGS=(
@@ -128,7 +129,7 @@ WANDB_ARGS=(
 
 SGLANG_ARGS=(
    --rollout-num-gpus-per-engine 1
-   --sglang-mem-fraction-static 0.7
+   --sglang-mem-fraction-static 0.6
    --sglang-server-concurrency 256
 )
 
